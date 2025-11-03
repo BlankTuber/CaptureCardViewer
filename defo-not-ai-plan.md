@@ -1,930 +1,339 @@
-# Capture Card Viewer - Concrete Development Plan
+# Capture Card Media Player - Development Roadmap
 
-**Date:** October 28, 2025
+## Phase 1: Project Foundation
 
-## Executive Summary
+### Initial Setup
+- Create new Rust project with cargo
+- Set up project structure with platform-specific modules (windows, linux, common)
+- Configure Cargo.toml with core dependencies: wgpu, winit, egui, nokhwa/v4l, cpal
+- Set up feature flags for platform-specific code (windows, linux, asio)
+- Configure build profiles for development and release
+- Initialize version control and .gitignore
 
-This is a step-by-step development plan with **specific libraries** and **concrete implementation steps** for your Capture Card Viewer. Based on current Rust ecosystem research, I've identified the exact tools you need and broken down the project into manageable chunks you can tackle one at a time.
+### Basic Window and Rendering Pipeline
+- Create main window using winit
+- Initialize wgpu device and surface with proper present mode configuration
+- Set up basic render loop with frame timing
+- Implement simple texture rendering to verify GPU pipeline works
+- Add keyboard input handling for exit and basic controls
+- Verify window runs on both target platforms
 
-**Language Decision: Use Rust.** It has everything you need - modern tooling, great package manager (Cargo), and excellent learning resources.
+### Milestone: Working empty window with render loop
+
+## Phase 2: Video Capture Core
+
+### Device Enumeration
+- Implement video device discovery using nokhwa or platform APIs
+- Create device information structures (name, capabilities, formats)
+- Build device selection interface (temporary console output is fine)
+- Add hotplug detection for device connection/disconnection
+- Verify capture card detection on both platforms
+
+### Basic Video Capture
+- Initialize capture device with default settings
+- Set up frame callback or polling mechanism
+- Allocate frame buffers for incoming video data
+- Implement basic frame acquisition loop
+- Add error handling for device failures
+- Test with actual capture card connected
+
+### Video Display Integration
+- Upload captured frames to GPU textures
+- Implement YUV to RGB color conversion (compute shader)
+- Render video frames to window surface
+- Handle aspect ratio and scaling
+- Add frame drop detection and logging
+- Verify smooth video playback
+
+### Milestone: Live video from capture card displaying in window
+
+## Phase 3: Audio Capture and Playback
+
+### Audio Device Setup
+- Enumerate audio input devices using CPAL
+- Match audio device to video source (usually same device)
+- Configure audio stream with fixed buffer size (256 samples)
+- Enable ASIO support on Windows for low latency
+- Test audio device detection and initialization
+
+### Audio Capture Pipeline
+- Set up audio input stream with callback
+- Implement lock-free ring buffer for audio data
+- Create audio processing thread for non-blocking operation
+- Add buffer overflow/underflow detection
+- Test audio capture independently from video
+
+### Audio Playback
+- Configure audio output stream
+- Connect ring buffer to output callback
+- Implement basic volume control
+- Add audio routing (capture device to speakers/headphones)
+- Verify audio plays without glitches or dropouts
+
+### Milestone: Audio and video both working (not yet synchronized)
+
+## Phase 4: Audio-Video Synchronization
+
+### Timestamp Management
+- Implement timestamp tracking for video frames
+- Add timestamp tracking for audio samples
+- Create synchronization state structure
+- Build drift detection mechanism
+- Add logging for A/V sync metrics
+
+### Synchronization Implementation
+- Designate audio as timing master
+- Calculate offset between audio and video timelines
+- Implement frame dropping for video running ahead
+- Implement frame duplication for video running behind
+- Add drift compensation with threshold-based adjustment
+- Test with various content types (gaming, video playback)
+
+### Milestone: Synchronized audio and video playback
+
+## Phase 5: User Interface
+
+### Settings Menu Foundation
+- Integrate egui with existing wgpu rendering
+- Create overlay toggle (keyboard shortcut)
+- Build main settings window structure
+- Implement settings panel layout
+
+### Device Selection UI
+- Add video device dropdown with live enumeration
+- Add audio device dropdown
+- Implement device switching without restart
+- Show device status indicators (connected/disconnected)
+- Add format and resolution selection
+
+### Playback Controls
+- Implement volume slider with visual feedback
+- Add volume mute toggle
+- Create aspect ratio controls (fit, fill, stretch, native)
+- Add latency/buffer size adjustment controls
+- Implement fullscreen toggle button
+
+### Visual Polish
+- Add framerate display (optional debug overlay)
+- Implement device information panel
+- Add connection status indicators
+- Create error message display system
+- Design minimal, non-intrusive UI appearance
+
+### Milestone: Fully functional settings interface
+
+## Phase 6: Configuration Persistence
+
+### Settings System
+- Define configuration structure with all user preferences
+- Implement settings loading with confy
+- Implement settings saving on change
+- Add default values for first launch
+- Handle missing or corrupted config files gracefully
+
+### State Management
+- Save last selected video device
+- Save last selected audio device
+- Persist volume level
+- Store window position and size
+- Remember fullscreen state
+- Save aspect ratio preference
+- Store any custom latency settings
+
+### Device Persistence Strategy
+- Store device identifiers (not indices)
+- Implement fallback to default device if saved device unavailable
+- Add validation for loaded settings
+- Create settings migration system for future updates
+
+### Milestone: Settings persist across application restarts
+
+## Phase 7: Window Management
+
+### Fullscreen Implementation
+- Implement borderless fullscreen mode
+- Add keyboard shortcut for fullscreen toggle (F11)
+- Handle monitor selection for multi-monitor setups
+- Implement smooth transitions between windowed and fullscreen
+- Preserve window position when returning from fullscreen
+
+### Window State Management
+- Handle window resize events properly
+- Maintain aspect ratio during resize (if enabled)
+- Implement window minimization/restoration
+- Add window focus handling
+- Handle DPI scaling on high-DPI displays
+
+### Milestone: Polished window management experience
+
+## Phase 8: Performance Optimization
+
+### Latency Optimization
+- Profile application with cargo-flamegraph
+- Identify bottlenecks in capture-to-display pipeline
+- Optimize buffer sizes for minimal latency
+- Fine-tune GPU present mode and frame latency
+- Minimize memory allocations in hot paths
+- Implement zero-copy paths where possible
+
+### Threading and Concurrency
+- Verify proper thread separation (capture, processing, display)
+- Implement lock-free communication between threads
+- Add thread priority settings where platform supports
+- Optimize channel buffer sizes for backpressure
+- Profile thread utilization and balance workload
+
+### Memory Management
+- Pre-allocate all frame buffers at initialization
+- Implement buffer pooling for reusable resources
+- Eliminate runtime allocations from hot paths
+- Profile memory usage and optimize footprint
+- Add memory leak detection in debug builds
+
+### Milestone: Consistent sub-100ms latency achieved
+
+## Phase 9: Error Handling and Robustness
+
+### Device Error Handling
+- Handle device disconnection gracefully
+- Implement automatic reconnection attempts
+- Add user notifications for device errors
+- Create fallback behavior for missing devices
+- Log errors for troubleshooting
+
+### Format and Compatibility
+- Handle unsupported video formats gracefully
+- Add format conversion where necessary
+- Test with various capture card models
+- Handle unusual resolutions and frame rates
+- Add warnings for suboptimal configurations
+
+### Application Stability
+- Add panic handlers with graceful shutdown
+- Implement proper resource cleanup on exit
+- Handle GPU device loss scenarios
+- Add recovery mechanisms for transient failures
+- Create comprehensive error logging
+
+### Milestone: Stable application that handles edge cases
+
+## Phase 10: Cross-Platform Testing
+
+### Windows Testing
+- Test with DirectShow and Media Foundation backends
+- Verify ASIO audio support works
+- Test with various USB and PCIe capture cards
+- Validate on different Windows versions (10, 11)
+- Check high-DPI display support
+
+### Linux Testing
+- Test with V4L2 on various distributions
+- Verify ALSA and PulseAudio/PipeWire compatibility
+- Test with different kernel versions
+- Validate with various capture card drivers
+- Check Wayland and X11 compositor compatibility
+
+### Hardware Compatibility
+- Test with USB 2.0 and USB 3.0 capture cards
+- Validate with different resolution/framerate combinations
+- Test with UVC-compliant devices
+- Verify with professional capture cards
+- Document known compatibility issues
+
+### Milestone: Working reliably on both target platforms
+
+## Phase 11: User Experience Polish
+
+### Visual Refinements
+- Add smooth fade transitions for UI elements
+- Implement loading states during device initialization
+- Add visual feedback for all user actions
+- Create help tooltips for settings
+- Design informative error messages
+
+### Performance Indicators
+- Add optional latency display
+- Show dropped frame counter
+- Display current resolution and framerate
+- Add audio buffer health indicators
+- Create debug overlay for troubleshooting
+
+### Keyboard Shortcuts
+- Implement fullscreen toggle (F11)
+- Add settings menu toggle (Escape or custom key)
+- Create volume adjustment shortcuts
+- Add aspect ratio cycling
+- Implement mute toggle
+
+### Milestone: Polished, user-friendly application
+
+## Phase 12: Documentation and Packaging
+
+### Documentation
+- Write README with feature overview
+- Create installation instructions for both platforms
+- Document system requirements
+- Add troubleshooting guide for common issues
+- List tested capture card models
+- Include build instructions from source
+
+### Build System
+- Configure release builds with optimizations
+- Set up cross-compilation if needed
+- Create platform-specific build scripts
+- Optimize binary size
+- Strip debug symbols for release
+
+### Distribution
+- Create Windows installer or portable executable
+- Build Linux binaries or AppImage
+- Write release notes
+- Consider package manager distribution (optional)
+- Set up update mechanism (future consideration)
+
+### Milestone: Distributable application ready for users
+
+## Phase 13: Future Enhancements (Optional)
+
+### Advanced Features
+- Recording capability to disk
+- Screenshot functionality
+- Multiple capture card support
+- Picture-in-picture mode
+- Stream output (RTMP/WebRTC)
+- Hardware encoding integration
+- Custom shader effects
+- Overlay graphics support
+
+### Performance Features
+- HDR video support
+- 4K resolution optimization
+- High framerate support (120fps+)
+- Hardware-accelerated processing
+- GPU-specific optimizations
+
+### User Requests
+- Monitor community feedback
+- Prioritize most requested features
+- Address reported bugs
+- Improve compatibility based on user testing
 
 ---
 
-## Technology Stack (Decided)
+## General Development Principles
 
-### Core Libraries
+**Iterate in small steps**: Get each phase fully working before moving to the next
 
-**Video Capture:**
+**Test frequently**: Verify on both platforms regularly, don't wait until the end
 
-- **`nokhwa` (v0.10+)** - Cross-platform camera/capture card library
-  - Works on Windows (DirectShow/Media Foundation) and Linux (V4L2)
-  - Supports most USB capture cards
-  - Easy device enumeration
-  - GitHub: <https://github.com/l1npengtul/nokhwa>
-  - Docs: <https://docs.rs/nokhwa>
+**Profile early**: Measure latency from the beginning, don't optimize blindly
 
-**Audio Playback:**
+**Handle errors**: Add error handling as you build features, not as an afterthought
 
-- **`cpal` (latest)** - Cross-platform audio I/O
-  - Low-level, gives you control over latency
-  - Works on Windows (WASAPI) and Linux (ALSA/PulseAudio)
-  - Industry standard for Rust audio
-  - GitHub: <https://github.com/RustAudio/cpal>
-  - Docs: <https://docs.rs/cpal>
+**Keep it simple**: Start with the minimal viable feature, add complexity only when needed
 
-**Video Rendering:**
+**Document decisions**: Note why you chose specific approaches for future reference
 
-- **`sdl2` (v0.38+)** - Simple DirectMedia Layer 2 bindings
-  - Fast texture-based rendering
-  - Cross-platform window management
-  - Handles video efficiently
-  - GitHub: <https://github.com/Rust-SDL2/rust-sdl2>
-  - Docs: <https://rust-sdl2.github.io/rust-sdl2/sdl2/>
+**Use version control**: Commit working states frequently, especially before major changes
 
-**GUI Framework:**
-
-- **`egui` (latest) with `eframe`** - Immediate mode GUI
-  - Super simple to use (perfect for learning)
-  - Great for simple UIs like yours
-  - Works with SDL2
-  - GitHub: <https://github.com/emilk/egui>
-  - Docs: <https://docs.rs/egui>
-
-**Configuration:**
-
-- **`serde` + `toml`** - For saving settings
-- **`anyhow`** - For easy error handling
-
----
-
-## Project Structure
-
-```md
-capture-card-viewer/
-├── Cargo.toml
-├── src/
-│   ├── main.rs           # Entry point
-│   ├── capture.rs        # Video/audio capture logic
-│   ├── display.rs        # Video rendering with SDL2
-│   ├── audio.rs          # Audio playback with cpal
-│   ├── gui.rs            # GUI with egui
-│   ├── config.rs         # Settings management
-│   └── error.rs          # Custom error types
-└── config.toml           # User settings file
-```
-
----
-
-## Phase-by-Phase Implementation
-
-### Phase 0: Setup & Hello World (1-2 days)
-
-**Goal:** Get Rust and basic project running
-
-1. **Create Project:**
-
-   ```bash
-   cargo new capture-card-viewer
-   cd capture-card-viewer
-   ```
-
-2. **Install SDL2 Native Libraries:**
-
-   **Windows:**
-
-   ```bash
-   # SDL2 will be bundled with the rust crate when using "bundled" feature
-   # No separate installation needed
-   ```
-
-   **Linux:**
-
-   ```bash
-   # Ubuntu/Debian
-   sudo apt-get install libsdl2-dev libsdl2-image-dev libsdl2-ttf-dev
-   
-   # Fedora
-   sudo dnf install SDL2-devel SDL2_image-devel SDL2_ttf-devel
-   
-   # For audio (ALSA)
-   sudo apt-get install libasound2-dev  # Ubuntu/Debian
-   sudo dnf install alsa-lib-devel      # Fedora
-   ```
-
-3. **Test Basic Rust:**
-
-   ```rust
-   // src/main.rs
-   fn main() {
-       println!("Capture Card Viewer starting...");
-   }
-   ```
-
-   Run with: `cargo run`
-
-4. **Test SDL2 Window:**
-
-   ```rust
-   // src/main.rs
-   use sdl2::event::Event;
-   use sdl2::keyboard::Keycode;c
-   use std::time::Duration;
-
-   fn main() -> Result<(), String> {
-       let sdl_context = sdl2::init()?;
-       let video_subsystem = sdl_context.video()?;
-       
-       let window = video_subsystem
-           .window("Test Window", 800, 600)
-           .position_centered()
-           .build()
-           .map_err(|e| e.to_string())?;
-       
-       let mut canvas = window.into_canvas().build().map_err(|e| e.to_string())?;
-       let mut event_pump = sdl_context.event_pump()?;
-       
-       'running: loop {
-           for event in event_pump.poll_iter() {
-               match event {
-                   Event::Quit {..} | Event::KeyDown { keycode: Some(Keycode::Escape), .. } => {
-                       break 'running
-                   },
-                   _ => {}
-               }
-           }
-           
-           canvas.clear();
-           canvas.present();
-           ::std::thread::sleep(Duration::new(0, 1_000_000_000u32 / 60));
-       }
-       
-       Ok(())
-   }
-   ```
-
-**Milestone:** You have a blank window that opens and closes. This confirms SDL2 works.
-
----
-
-### Phase 1: Device Enumeration (2-3 days)
-
-**Goal:** List all available capture devices
-
-1. **Add nokhwa to Cargo.toml** (already in the setup above)
-
-2. **Create capture.rs:**
-
-   ```rust
-   // src/capture.rs
-   use nokhwa::pixel_format::RgbFormat;
-   use nokhwa::utils::{CameraIndex, RequestedFormat, RequestedFormatType};
-   use nokhwa::Camera;
-   use anyhow::Result;
-
-   pub fn list_devices() -> Result<Vec<String>> {
-       let devices = nokhwa::query_devices(nokhwa::utils::ApiBackend::Auto)?;
-       let device_names: Vec<String> = devices
-           .iter()
-           .map(|info| info.human_name().to_string())
-           .collect();
-       Ok(device_names)
-   }
-
-   pub struct CaptureDevice {
-       camera: Camera,
-   }
-
-   impl CaptureDevice {
-       pub fn new(device_index: usize) -> Result<Self> {
-           let index = CameraIndex::Index(device_index as u32);
-           
-           // Request 1080p@60fps, RGB format
-           let requested = RequestedFormat::new::<RgbFormat>(
-               RequestedFormatType::AbsoluteHighestFrameRate
-           );
-           
-           let camera = Camera::new(index, requested)?;
-           
-           Ok(Self { camera })
-       }
-       
-       pub fn start(&mut self) -> Result<()> {
-           self.camera.open_stream()?;
-           Ok(())
-       }
-       
-       pub fn get_frame(&mut self) -> Result<Vec<u8>> {
-           let frame = self.camera.frame()?;
-           let decoded = frame.decode_image::<RgbFormat>()?;
-           Ok(decoded.to_vec())
-       }
-   }
-   ```
-
-3. **Update main.rs to list devices:**
-
-   ```rust
-   // src/main.rs
-   mod capture;
-   use anyhow::Result;
-
-   fn main() -> Result<()> {
-       println!("Searching for capture devices...");
-       
-       let devices = capture::list_devices()?;
-       
-       if devices.is_empty() {
-           println!("No capture devices found!");
-           return Ok(());
-       }
-       
-       println!("Found {} device(s):", devices.len());
-       for (i, device) in devices.iter().enumerate() {
-           println!("  [{}] {}", i, device);
-       }
-       
-       Ok(())
-   }
-   ```
-
-4. **Test:**
-
-   ```bash
-   cargo run
-   ```
-
-   **Expected output:** List of your capture cards/webcams
-
-**Milestone:** Your program can detect your capture card.
-
----
-
-### Phase 2: Video Capture & Display (4-5 days)
-
-**Goal:** Capture frames and display them in a window
-
-1. **Create display.rs:**
-
-   ```rust
-   // src/display.rs
-   use sdl2::render::{Canvas, Texture, TextureCreator};
-   use sdl2::video::{Window, WindowContext};
-   use sdl2::pixels::PixelFormatEnum;
-   use anyhow::Result;
-
-   pub struct VideoDisplay {
-       canvas: Canvas<Window>,
-       texture_creator: TextureCreator<WindowContext>,
-   }
-
-   impl VideoDisplay {
-       pub fn new(width: u32, height: u32) -> Result<Self> {
-           let sdl_context = sdl2::init()
-               .map_err(|e| anyhow::anyhow!("SDL init failed: {}", e))?;
-           let video_subsystem = sdl_context.video()
-               .map_err(|e| anyhow::anyhow!("Video subsystem failed: {}", e))?;
-           
-           let window = video_subsystem
-               .window("Capture Card Viewer", width, height)
-               .position_centered()
-               .resizable()
-               .build()?;
-           
-           let canvas = window.into_canvas().build()
-               .map_err(|e| anyhow::anyhow!("Canvas creation failed: {}", e))?;
-           
-           let texture_creator = canvas.texture_creator();
-           
-           Ok(Self {
-               canvas,
-               texture_creator,
-           })
-       }
-       
-       pub fn render_frame(&mut self, frame_data: &[u8], width: u32, height: u32) -> Result<()> {
-           // Create texture for this frame
-           let mut texture = self.texture_creator
-               .create_texture_streaming(PixelFormatEnum::RGB24, width, height)
-               .map_err(|e| anyhow::anyhow!("Texture creation failed: {}", e))?;
-           
-           // Update texture with frame data
-           texture.update(None, frame_data, (width * 3) as usize)
-               .map_err(|e| anyhow::anyhow!("Texture update failed: {}", e))?;
-           
-           // Clear and render
-           self.canvas.clear();
-           self.canvas.copy(&texture, None, None)
-               .map_err(|e| anyhow::anyhow!("Canvas copy failed: {}", e))?;
-           self.canvas.present();
-           
-           Ok(())
-       }
-   }
-   ```
-
-2. **Update main.rs to capture and display:**
-
-   ```rust
-   // src/main.rs
-   mod capture;
-   mod display;
-   
-   use anyhow::Result;
-   use sdl2::event::Event;
-   use sdl2::keyboard::Keycode;
-   use std::time::Duration;
-
-   fn main() -> Result<()> {
-       // List and select device
-       let devices = capture::list_devices()?;
-       if devices.is_empty() {
-           println!("No devices found");
-           return Ok(());
-       }
-       
-       println!("Using device: {}", devices[0]);
-       
-       // Create capture device (device index 0)
-       let mut capture_device = capture::CaptureDevice::new(0)?;
-       capture_device.start()?;
-       
-       // Create display window (1920x1080 for now)
-       let mut display = display::VideoDisplay::new(1920, 1080)?;
-       
-       // Get SDL event pump for handling window events
-       let sdl_context = sdl2::init().unwrap();
-       let mut event_pump = sdl_context.event_pump().unwrap();
-       
-       println!("Starting capture loop...");
-       
-       'running: loop {
-           // Handle events
-           for event in event_pump.poll_iter() {
-               match event {
-                   Event::Quit {..} | 
-                   Event::KeyDown { keycode: Some(Keycode::Escape), .. } => {
-                       break 'running
-                   },
-                   _ => {}
-               }
-           }
-           
-           // Capture and display frame
-           match capture_device.get_frame() {
-               Ok(frame_data) => {
-                   // Assume 1920x1080 for now - we'll get actual dimensions later
-                   if let Err(e) = display.render_frame(&frame_data, 1920, 1080) {
-                       eprintln!("Display error: {}", e);
-                   }
-               }
-               Err(e) => {
-                   eprintln!("Capture error: {}", e);
-               }
-           }
-           
-           // Small delay to prevent 100% CPU usage
-           ::std::thread::sleep(Duration::from_millis(1));
-       }
-       
-       println!("Shutting down...");
-       Ok(())
-   }
-   ```
-
-3. **Test with your capture card:**
-
-   ```bash
-   cargo run
-   ```
-
-**Milestone:** You see video from your capture card in the window!
-
----
-
-### Phase 3: Audio Capture & Playback (3-4 days)
-
-**Goal:** Get audio working and in sync with video
-
-1. **Create audio.rs:**
-
-   ```rust
-   // src/audio.rs
-   use cpal::traits::{DeviceTrait, HostTrait, StreamTrait};
-   use cpal::{Device, Stream, StreamConfig};
-   use anyhow::Result;
-   use std::sync::{Arc, Mutex};
-
-   pub struct AudioPlayer {
-       _stream: Stream,
-       device: Device,
-   }
-
-   impl AudioPlayer {
-       pub fn new() -> Result<Self> {
-           let host = cpal::default_host();
-           let device = host.default_output_device()
-               .ok_or_else(|| anyhow::anyhow!("No output device available"))?;
-           
-           let config = device.default_output_config()?;
-           
-           println!("Audio output device: {}", device.name()?);
-           println!("Audio config: {:?}", config);
-           
-           // Create a simple sine wave for testing
-           let mut sample_clock = 0f32;
-           let sample_rate = config.sample_rate().0 as f32;
-           
-           let stream = device.build_output_stream(
-               &config.into(),
-               move |data: &mut [f32], _: &cpal::OutputCallbackInfo| {
-                   for sample in data.iter_mut() {
-                       sample_clock = (sample_clock + 1.0) % sample_rate;
-                       *sample = (sample_clock * 440.0 * 2.0 * std::f32::consts::PI / sample_rate).sin();
-                   }
-               },
-               move |err| {
-                   eprintln!("Audio stream error: {}", err);
-               },
-               None
-           )?;
-           
-           stream.play()?;
-           
-           Ok(Self {
-               _stream: stream,
-               device,
-           })
-       }
-   }
-   
-   // Later, you'll integrate actual audio from the capture card
-   // For now, this is a placeholder that proves audio works
-   ```
-
-2. **Update main.rs to include audio:**
-
-   ```rust
-   // Add to main.rs
-   mod audio;
-   
-   // In main() function, add:
-   let _audio = audio::AudioPlayer::new()?;
-   println!("Audio started (test tone)");
-   ```
-
-**Note:** At this stage, audio is separate from video. You'll hear a test tone while seeing video. Syncing comes next.
-
-**Milestone:** You hear audio output (test tone) while video plays.
-
----
-
-### Phase 4: Audio-Video Sync (3-4 days)
-
-**Goal:** Make audio and video play in sync
-
-This is one of the trickier parts. Here's the approach:
-
-1. **Add timestamp tracking to capture.rs:**
-
-   ```rust
-   use std::time::Instant;
-   
-   pub struct Frame {
-       pub data: Vec<u8>,
-       pub timestamp: Instant,
-       pub width: u32,
-       pub height: u32,
-   }
-   
-   impl CaptureDevice {
-       pub fn get_frame_with_timestamp(&mut self) -> Result<Frame> {
-           let timestamp = Instant::now();
-           let frame = self.camera.frame()?;
-           let decoded = frame.decode_image::<RgbFormat>()?;
-           
-           Ok(Frame {
-               data: decoded.to_vec(),
-               timestamp,
-               width: frame.width(),
-               height: frame.height(),
-           })
-       }
-   }
-   ```
-
-2. **Use a ring buffer for audio-video sync:**
-
-   ```rust
-   // This is simplified - real implementation needs careful buffer management
-   use std::collections::VecDeque;
-   use std::sync::{Arc, Mutex};
-   
-   pub struct SyncBuffer {
-       video_frames: Arc<Mutex<VecDeque<Frame>>>,
-       audio_samples: Arc<Mutex<VecDeque<f32>>>,
-   }
-   ```
-
-3. **Calculate and correct drift:**
-   - Track video presentation time
-   - Track audio playback time
-   - If video is ahead, drop frames
-   - If audio is ahead, insert silence
-
-**This is complex**, so for MVP, you might want to:
-
-- Accept some drift (< 100ms is okay for many uses)
-- Start simple: just display frames as fast as they come
-- Add sync correction in v1.1
-
-**Milestone:** Audio and video play together with acceptable sync (<100ms drift).
-
----
-
-### Phase 5: Basic GUI (3-4 days)
-
-**Goal:** Add device selection dropdown and basic controls
-
-1. **Create gui.rs with egui:**
-
-   ```rust
-   // src/gui.rs
-   use eframe::egui;
-   
-   pub struct ViewerApp {
-       selected_device: usize,
-       available_devices: Vec<String>,
-       is_playing: bool,
-       volume: f32,
-   }
-   
-   impl Default for ViewerApp {
-       fn default() -> Self {
-           Self {
-               selected_device: 0,
-               available_devices: Vec::new(),
-               is_playing: false,
-               volume: 1.0,
-           }
-       }
-   }
-   
-   impl eframe::App for ViewerApp {
-       fn update(&mut self, ctx: &egui::Context, _frame: &mut eframe::Frame) {
-           egui::TopBottomPanel::top("top_panel").show(ctx, |ui| {
-               ui.horizontal(|ui| {
-                   ui.label("Device:");
-                   egui::ComboBox::from_id_salt("device_selector")
-                       .selected_text(&self.available_devices[self.selected_device])
-                       .show_ui(ui, |ui| {
-                           for (i, device) in self.available_devices.iter().enumerate() {
-                               ui.selectable_value(&mut self.selected_device, i, device);
-                           }
-                       });
-                   
-                   if ui.button(if self.is_playing { "Stop" } else { "Start" }).clicked() {
-                       self.is_playing = !self.is_playing;
-                   }
-                   
-                   ui.separator();
-                   ui.label("Volume:");
-                   ui.add(egui::Slider::new(&mut self.volume, 0.0..=1.0));
-               });
-           });
-           
-           egui::CentralPanel::default().show(ctx, |ui| {
-               ui.heading("Video will display here");
-               // Video rendering happens via SDL2 in a separate window for now
-               // Later you can integrate egui with SDL2 or use egui's image support
-           });
-       }
-   }
-   ```
-
-2. **For MVP, keep GUI simple:**
-   - Have SDL2 window for video
-   - Small egui window for controls
-   - They can be separate windows initially
-
-**Milestone:** You have basic UI controls that work.
-
----
-
-### Phase 6: Linux Support (2-3 days)
-
-**Goal:** Make it work on Linux
-
-The great news: **nokhwa** and **cpal** handle most platform differences!
-
-1. **Test on Linux:**
-
-   ```bash
-   # On Linux machine
-   cargo build
-   cargo run
-   ```
-
-2. **Handle Linux-specific issues:**
-   - Check V4L2 permissions: `sudo usermod -a -G video $USER`
-   - Check ALSA permissions: `sudo usermod -a -G audio $USER`
-   - Test with different capture cards
-
-3. **Add Linux-specific config if needed:**
-
-   ```rust
-   #[cfg(target_os = "linux")]
-   fn setup_linux() {
-       // Any Linux-specific initialization
-   }
-   ```
-
-**Milestone:** Application runs on both Windows and Linux.
-
----
-
-### Phase 7: Polish & Settings (2-3 days)
-
-**Goal:** Add configuration, improve UX
-
-1. **Create config.rs:**
-
-   ```rust
-   // src/config.rs
-   use serde::{Deserialize, Serialize};
-   use std::fs;
-   use anyhow::Result;
-   
-   #[derive(Serialize, Deserialize, Default)]
-   pub struct Config {
-       pub default_device: Option<usize>,
-       pub volume: f32,
-       pub window_width: u32,
-       pub window_height: u32,
-       pub fullscreen_on_start: bool,
-   }
-   
-   impl Config {
-       pub fn load() -> Result<Self> {
-           let config_str = fs::read_to_string("config.toml")?;
-           let config: Config = toml::from_str(&config_str)?;
-           Ok(config)
-       }
-       
-       pub fn save(&self) -> Result<()> {
-           let config_str = toml::to_string_pretty(self)?;
-           fs::write("config.toml", config_str)?;
-           Ok(())
-       }
-       
-       pub fn load_or_default() -> Self {
-           Self::load().unwrap_or_default()
-       }
-   }
-   ```
-
-2. **Add keyboard shortcuts:**
-   - F for fullscreen
-   - ESC to exit
-   - M to mute
-   - Space to pause (if implementing)
-
-3. **Improve error messages:**
-   - "No capture card detected. Please connect a capture device."
-   - "Audio device not found. Check system audio settings."
-
-**Milestone:** User-friendly application with saved preferences.
-
----
-
-## Testing Strategy
-
-### Per-Phase Testing
-
-1. **Phase 1:** Plug/unplug capture cards, verify detection
-2. **Phase 2:** Test with different resolutions, check frame drops
-3. **Phase 3:** Verify audio doesn't crackle or skip
-4. **Phase 4:** Watch for A/V drift over 5+ minutes
-5. **Phase 5:** Click all UI elements, verify responsiveness
-6. **Phase 6:** Test on actual Linux machine
-7. **Phase 7:** Test with config file changes
-
-### Integration Testing
-
-- Run for 30+ minutes continuously
-- Monitor CPU/memory usage
-- Test device switching without restart
-- Test with multiple capture card brands
-
----
-
-## Common Issues & Solutions
-
-### Issue: "No devices found"
-
-**Solution:**
-
-- Windows: Install capture card drivers
-- Linux: Check `v4l2-ctl --list-devices`
-- Verify capture card is plugged in and powered
-
-### Issue: "Black screen"
-
-**Solution:**
-
-- Check if capture card needs input signal
-- Verify resolution matches
-- Try different device index
-
-### Issue: "Audio crackling"
-
-**Solution:**
-
-- Increase buffer size in cpal
-- Check CPU usage (should be <30%)
-- Reduce video frame rate if needed
-
-### Issue: "High CPU usage"
-
-**Solution:**
-
-- Use hardware decoding if available
-- Reduce video resolution
-- Optimize frame rendering (only update when new frame)
-
-### Issue: "Build fails on Linux"
-
-**Solution:**
-
-```bash
-# Install all required dev packages
-sudo apt-get install build-essential libsdl2-dev libasound2-dev pkg-config
-```
-
----
-
-## Timeline Estimate
-
-**MVP (Version 1.0):**
-
-- Phase 0: 1-2 days
-- Phase 1: 2-3 days
-- Phase 2: 4-5 days
-- Phase 3: 3-4 days
-- Phase 4: 3-4 days (or defer to v1.1)
-- Phase 5: 3-4 days
-- Phase 6: 2-3 days
-- Phase 7: 2-3 days
-
-**Total: ~20-28 days** (3-4 weeks of focused work)
-
-This assumes:
-
-- Working ~4-6 hours per day
-- Some debugging time
-- Learning Rust as you go
-
----
-
-## Learning Resources
-
-### Rust Basics
-
-- **The Rust Book:** <https://doc.rust-lang.org/book/>
-- Focus on: Chapters 1-10, 13 (important!)
-- **Rust by Example:** <https://doc.rust-lang.org/rust-by-example/>
-
-### Library-Specific
-
-- **nokhwa examples:** <https://github.com/l1npengtul/nokhwa/tree/master/examples>
-- **cpal examples:** <https://github.com/RustAudio/cpal/tree/master/examples>
-- **SDL2 Rust tutorial:** <https://blog.logrocket.com/using-sdl2-bindings-rust/>
-- **egui demo:** <https://www.egui.rs/>
-
-### When Stuck
-
-- **Rust Discord:** <https://discord.gg/rust-lang>
-- **r/rust subreddit:** <https://reddit.com/r/rust>
-- **Rust Users Forum:** <https://users.rust-lang.org/>
-
----
-
-## Next Steps - Start Here
-
-1. **Today:** Install Rust, create project, get hello world running
-2. **Tomorrow:** Get SDL2 window working
-3. **Day 3:** Install capture card, test device enumeration
-4. **Day 4:** Capture first frame and display it
-5. **Day 5:** Get continuous video working
-
-**Don't try to do everything at once.** Build one feature, get it working, then move to the next.
-
----
-
-## Future Enhancements (Post-MVP)
-
-After v1.0 is stable, consider:
-
-### v1.1 - Improvements
-
-- Better A/V sync with drift correction
-- Hardware-accelerated video decoding
-- Multi-threaded frame processing
-- Performance metrics display
-
-### v1.2 - Features
-
-- Basic recording to MP4
-- Screenshot capture
-- Window always-on-top
-- System tray integration
-
-### v2.0 - Advanced
-
-- Multiple capture cards support
-- Streaming output (RTMP)
-- Video filters (brightness, contrast)
-- Audio device selection separate from video
-
----
-
-## Critical Tips
-
-1. **Start Simple:** Don't try to make everything perfect. Get it working first.
-
-2. **Test Early:** Test each phase with your actual capture card before moving on.
-
-3. **Use Examples:** The libraries have example code - copy and modify them.
-
-4. **Ask for Help:** The Rust community is friendly. Use Discord/forums when stuck.
-
-5. **Commit Often:** Use git, commit after each working feature.
-
-6. **Document Weird Issues:** When you fix something tricky, write it down.
-
-7. **Don't Optimize Early:** Get it working, then make it fast.
-
----
-
-## Success Criteria (MVP)
-
-You're done with v1.0 when:
-
-- ✅ App launches and shows UI
-- ✅ Capture card detected and listed
-- ✅ Video displays with no visible lag
-- ✅ Audio plays in sync with video
-- ✅ Can switch devices from UI
-- ✅ Runs stable for 30+ minutes
-- ✅ Works on Windows (and ideally Linux)
-- ✅ A friend can download and use it
-
----
-
-## Final Words
-
-This is a **learning project**, so expect:
-
-- Some frustration with Rust's ownership system (totally normal!)
-- Trial and error with A/V sync (everyone struggles with this)
-- Platform-specific quirks (especially on Linux)
-- Rewrites as you understand things better
-
-But you'll learn:
-
-- Real-time audio/video programming
-- Rust's powerful type system
-- Cross-platform development
-- How capture cards actually work
-
----
-
-## Appendix: Quick Command Reference
-
-```bash
-# Create project
-cargo new capture-card-viewer
-
-# Add a dependency
-cargo add nokhwa --features input-native
-
-# Build project
-cargo build
-
-# Run project
-cargo run
-
-# Build optimized release
-cargo build --release
-
-# Run release version
-cargo run --release
-
-# Check for errors without building
-cargo check
-
-# Format code
-cargo fmt
-
-# Run linter
-cargo clippy
-```
+This roadmap takes you from empty project to polished, cross-platform capture card viewer with low latency and professional quality. Each milestone represents a functional checkpoint where you can test, evaluate, and adjust before proceeding.
