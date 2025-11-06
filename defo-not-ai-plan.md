@@ -3,6 +3,7 @@
 ## Phase 1: Project Foundation
 
 ### Initial Setup
+
 - Create new Rust project with cargo
 - Set up project structure with platform-specific modules (windows, linux, common)
 - Configure Cargo.toml with core dependencies: wgpu, winit, egui, nokhwa/v4l, cpal
@@ -11,6 +12,7 @@
 - Initialize version control and .gitignore
 
 ### Basic Window and Rendering Pipeline
+
 - Create main window using winit
 - Initialize wgpu device and surface with proper present mode configuration
 - Set up basic render loop with frame timing
@@ -23,6 +25,7 @@
 ## Phase 2: Video Capture Core
 
 ### Device Enumeration
+
 - Implement video device discovery using nokhwa or platform APIs
 - Create device information structures (name, capabilities, formats)
 - Build device selection interface (temporary console output is fine)
@@ -30,6 +33,7 @@
 - Verify capture card detection on both platforms
 
 ### Basic Video Capture
+
 - Initialize capture device with default settings
 - Set up frame callback or polling mechanism
 - Allocate frame buffers for incoming video data
@@ -38,6 +42,7 @@
 - Test with actual capture card connected
 
 ### Video Display Integration
+
 - Upload captured frames to GPU textures
 - Implement YUV to RGB color conversion (compute shader)
 - Render video frames to window surface
@@ -50,6 +55,7 @@
 ## Phase 3: Audio Capture and Playback
 
 ### Audio Device Setup
+
 - Enumerate audio input devices using CPAL
 - Match audio device to video source (usually same device)
 - Configure audio stream with fixed buffer size (256 samples)
@@ -57,6 +63,7 @@
 - Test audio device detection and initialization
 
 ### Audio Capture Pipeline
+
 - Set up audio input stream with callback
 - Implement lock-free ring buffer for audio data
 - Create audio processing thread for non-blocking operation
@@ -64,6 +71,7 @@
 - Test audio capture independently from video
 
 ### Audio Playback
+
 - Configure audio output stream
 - Connect ring buffer to output callback
 - Implement basic volume control
@@ -75,6 +83,7 @@
 ## Phase 4: Audio-Video Synchronization
 
 ### Timestamp Management
+
 - Implement timestamp tracking for video frames
 - Add timestamp tracking for audio samples
 - Create synchronization state structure
@@ -82,6 +91,7 @@
 - Add logging for A/V sync metrics
 
 ### Synchronization Implementation
+
 - Designate audio as timing master
 - Calculate offset between audio and video timelines
 - Implement frame dropping for video running ahead
@@ -94,12 +104,14 @@
 ## Phase 5: User Interface
 
 ### Settings Menu Foundation
+
 - Integrate egui with existing wgpu rendering
 - Create overlay toggle (keyboard shortcut)
 - Build main settings window structure
 - Implement settings panel layout
 
 ### Device Selection UI
+
 - Add video device dropdown with live enumeration
 - Add audio device dropdown
 - Implement device switching without restart
@@ -107,6 +119,7 @@
 - Add format and resolution selection
 
 ### Playback Controls
+
 - Implement volume slider with visual feedback
 - Add volume mute toggle
 - Create aspect ratio controls (fit, fill, stretch, native)
@@ -114,6 +127,7 @@
 - Implement fullscreen toggle button
 
 ### Visual Polish
+
 - Add framerate display (optional debug overlay)
 - Implement device information panel
 - Add connection status indicators
@@ -125,6 +139,7 @@
 ## Phase 6: Configuration Persistence
 
 ### Settings System
+
 - Define configuration structure with all user preferences
 - Implement settings loading with confy
 - Implement settings saving on change
@@ -132,6 +147,7 @@
 - Handle missing or corrupted config files gracefully
 
 ### State Management
+
 - Save last selected video device
 - Save last selected audio device
 - Persist volume level
@@ -141,6 +157,7 @@
 - Store any custom latency settings
 
 ### Device Persistence Strategy
+
 - Store device identifiers (not indices)
 - Implement fallback to default device if saved device unavailable
 - Add validation for loaded settings
@@ -151,6 +168,7 @@
 ## Phase 7: Window Management
 
 ### Fullscreen Implementation
+
 - Implement borderless fullscreen mode
 - Add keyboard shortcut for fullscreen toggle (F11)
 - Handle monitor selection for multi-monitor setups
@@ -158,6 +176,7 @@
 - Preserve window position when returning from fullscreen
 
 ### Window State Management
+
 - Handle window resize events properly
 - Maintain aspect ratio during resize (if enabled)
 - Implement window minimization/restoration
@@ -169,6 +188,7 @@
 ## Phase 8: Performance Optimization
 
 ### Latency Optimization
+
 - Profile application with cargo-flamegraph
 - Identify bottlenecks in capture-to-display pipeline
 - Optimize buffer sizes for minimal latency
@@ -177,6 +197,7 @@
 - Implement zero-copy paths where possible
 
 ### Threading and Concurrency
+
 - Verify proper thread separation (capture, processing, display)
 - Implement lock-free communication between threads
 - Add thread priority settings where platform supports
@@ -184,6 +205,7 @@
 - Profile thread utilization and balance workload
 
 ### Memory Management
+
 - Pre-allocate all frame buffers at initialization
 - Implement buffer pooling for reusable resources
 - Eliminate runtime allocations from hot paths
@@ -195,6 +217,7 @@
 ## Phase 9: Error Handling and Robustness
 
 ### Device Error Handling
+
 - Handle device disconnection gracefully
 - Implement automatic reconnection attempts
 - Add user notifications for device errors
@@ -202,6 +225,7 @@
 - Log errors for troubleshooting
 
 ### Format and Compatibility
+
 - Handle unsupported video formats gracefully
 - Add format conversion where necessary
 - Test with various capture card models
@@ -209,6 +233,7 @@
 - Add warnings for suboptimal configurations
 
 ### Application Stability
+
 - Add panic handlers with graceful shutdown
 - Implement proper resource cleanup on exit
 - Handle GPU device loss scenarios
@@ -220,6 +245,7 @@
 ## Phase 10: Cross-Platform Testing
 
 ### Windows Testing
+
 - Test with DirectShow and Media Foundation backends
 - Verify ASIO audio support works
 - Test with various USB and PCIe capture cards
@@ -227,6 +253,7 @@
 - Check high-DPI display support
 
 ### Linux Testing
+
 - Test with V4L2 on various distributions
 - Verify ALSA and PulseAudio/PipeWire compatibility
 - Test with different kernel versions
@@ -234,6 +261,7 @@
 - Check Wayland and X11 compositor compatibility
 
 ### Hardware Compatibility
+
 - Test with USB 2.0 and USB 3.0 capture cards
 - Validate with different resolution/framerate combinations
 - Test with UVC-compliant devices
@@ -245,6 +273,7 @@
 ## Phase 11: User Experience Polish
 
 ### Visual Refinements
+
 - Add smooth fade transitions for UI elements
 - Implement loading states during device initialization
 - Add visual feedback for all user actions
@@ -252,6 +281,7 @@
 - Design informative error messages
 
 ### Performance Indicators
+
 - Add optional latency display
 - Show dropped frame counter
 - Display current resolution and framerate
@@ -259,6 +289,7 @@
 - Create debug overlay for troubleshooting
 
 ### Keyboard Shortcuts
+
 - Implement fullscreen toggle (F11)
 - Add settings menu toggle (Escape or custom key)
 - Create volume adjustment shortcuts
@@ -270,6 +301,7 @@
 ## Phase 12: Documentation and Packaging
 
 ### Documentation
+
 - Write README with feature overview
 - Create installation instructions for both platforms
 - Document system requirements
@@ -278,6 +310,7 @@
 - Include build instructions from source
 
 ### Build System
+
 - Configure release builds with optimizations
 - Set up cross-compilation if needed
 - Create platform-specific build scripts
@@ -285,6 +318,7 @@
 - Strip debug symbols for release
 
 ### Distribution
+
 - Create Windows installer or portable executable
 - Build Linux binaries or AppImage
 - Write release notes
@@ -296,6 +330,7 @@
 ## Phase 13: Future Enhancements (Optional)
 
 ### Advanced Features
+
 - Recording capability to disk
 - Screenshot functionality
 - Multiple capture card support
@@ -306,6 +341,7 @@
 - Overlay graphics support
 
 ### Performance Features
+
 - HDR video support
 - 4K resolution optimization
 - High framerate support (120fps+)
@@ -313,6 +349,7 @@
 - GPU-specific optimizations
 
 ### User Requests
+
 - Monitor community feedback
 - Prioritize most requested features
 - Address reported bugs
